@@ -1,7 +1,6 @@
 package tree
 
 import (
-	"fmt"
 	"ow_test/entities"
 )
 
@@ -9,40 +8,32 @@ var g int
 
 type Tree struct {
 	children []*node
+	nodeMap  map[string]*node
 }
 
 func NewTree() *Tree {
 	return &Tree{
 		children: make([]*node, 0),
+		nodeMap:  make(map[string]*node),
 	}
 }
 
 func (t *Tree) Add(msg *entities.Msg) {
-	if msg.ParentID == `` {
-		t.children = append(t.children, newNode(msg))
+	addedNode := newNode(msg)
+	_, exists := t.nodeMap[addedNode.ID]
+	_, parentExists := t.nodeMap[addedNode.ParentID]
+	if !parentExists {
+		t.nodeMap[addedNode.ParentID] = &node{addedNode.ParentID, "", nil, make([]*node, 0)}
+	}
+	if exists {
+		t.nodeMap[addedNode.ID].data = addedNode.data
+		t.nodeMap[addedNode.ID].ParentID = addedNode.ParentID
 	} else {
-		for _, v := range t.children {
-			AddRec(v, msg)
-		}
+		t.nodeMap[addedNode.ID] = addedNode
 	}
-	g++
-	if g%10000 == 0 {
-		fmt.Printf("added = %d\n", g)
+	if addedNode.ParentID == `` {
+		t.children = append(t.children, t.nodeMap[addedNode.ID])
+	} else { //not main leaf
+		t.nodeMap[addedNode.ParentID].children = append(t.nodeMap[addedNode.ParentID].children, t.nodeMap[addedNode.ID])
 	}
-}
-
-func AddRec(node *node, msg *entities.Msg) {
-	// fmt.Println("hi")
-	if node.ID == msg.ParentID {
-		node.children = append(node.children, newNode(msg))
-	} else {
-		for _, v := range node.children {
-			AddRec(v, msg)
-		}
-	}
-
-}
-
-func GetParent(node *node) {
-
 }
